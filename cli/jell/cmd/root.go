@@ -1,48 +1,15 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+Copyrigh © 2025 NAME HERE <EMAIL ADDRESS>
 */
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/Ygg-Drasill/Jelling/cli/jell/model"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
-
-type model struct {
-	x int
-}
-
-func (m model) Init() tea.Cmd {
-	return nil
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			cmd = tea.Quit
-			break
-		case "up":
-			m.x++
-			break
-		case "down":
-			m.x--
-			break
-		}
-
-	}
-	return m, cmd
-}
-
-func (m model) View() string {
-	s := fmt.Sprintf("Hello World %d", m.x)
-	return s
-}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -57,7 +24,7 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		tea.NewProgram(model{x: 1}).Run()
+		tea.NewProgram(model.InitialModel(), tea.WithAltScreen()).Run()
 	},
 }
 
