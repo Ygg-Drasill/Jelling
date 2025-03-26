@@ -3,7 +3,6 @@ package model
 import (
 	"os"
 
-	"github.com/Ygg-Drasill/Jelling/cli/jell/model/user"
 	"github.com/Ygg-Drasill/Jelling/cli/jell/ui"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,17 +11,18 @@ import (
 )
 
 type JellModel struct {
-	user            *user.User
+	user            *User
+	articleResults  []Article
 	ui              ui.JellState
 	activeComponent any
 }
 
 func InitialModel() JellModel {
-	ui := ui.NewJellState()
+	state := ui.NewJellState()
 	return JellModel{
 		user:            nil,
-		activeComponent: ui.SearchInput,
-		ui:              ui,
+		activeComponent: state.SearchInput,
+		ui:              state,
 	}
 }
 
@@ -57,13 +57,9 @@ func (m JellModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m JellModel) View() string {
 	termWidth, termHeight, _ := term.GetSize(int(os.Stdout.Fd()))
 	style := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("#553333")).
-		PaddingTop(2).
-		PaddingLeft(4).
 		Height(termHeight).
-		Width(termWidth)
+		Width(termWidth).
+		Align(lipgloss.Center)
 	if m.user == nil {
 		return style.Render(m.ui.SearchInput.View())
 	}

@@ -16,6 +16,8 @@ func NewJellState() JellState {
 	searchInput.CharLimit = 256
 	searchInput.Width = 30
 
+	searchInput.Prompt = "> "
+
 	return JellState{
 		SearchInput: searchInput,
 	}
