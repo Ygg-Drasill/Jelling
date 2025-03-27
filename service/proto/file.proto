@@ -1,0 +1,17 @@
+syntax="proto3";
+
+option go_package = "proto/";
+
+service File {
+  rpc FetchFile(FileRequest) returns (FileResponse) {}
+}
+
+message FileRequest {
+  string owner = 1;
+  string repo = 2;
+  string path = 3;
+}
+
+message FileResponse {
+  bytes content = 1;
+}
