@@ -1,0 +1,18 @@
+meta {
+  name: auth
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{address}}:{{port}}{{baseEndpoint}}/account/auth
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "alexref",
+    "password": "1234"
+  }
+}

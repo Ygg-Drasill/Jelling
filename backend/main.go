@@ -16,5 +16,8 @@ func main() {
 
 	ctx := handlers.NewContext(db)
 	mux := handlers.NewJellingMux(ctx)
-	http.ListenAndServe("localhost:30420", mux)
+	err = http.ListenAndServe("localhost:30420", mux)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

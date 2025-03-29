@@ -14,7 +14,9 @@ var rootCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		tea.NewProgram(model.InitialModel(), tea.WithAltScreen()).Run()
+		if len(args) < 1 {
+			tea.NewProgram(model.InitialModel(), tea.WithAltScreen()).Run()
+		}
 	},
 }
 
