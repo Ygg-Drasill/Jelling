@@ -12,8 +12,6 @@ import (
 
 func (ctx *Context) HandleAccountRegister() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(r.Cookies())
-		ctx.Logger.Info("Handling Account Register")
 		var requestBody api.AccountRequest
 		var response api.SessionTokenResponse
 

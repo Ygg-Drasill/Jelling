@@ -91,7 +91,7 @@ func (m JellAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			if m.inputIndex == len(m.textInputs)-1 {
-				if m.textInputs[1].Value() != m.textInputs[2].Value() {
+				if m.screenMode == ModeRegister && m.textInputs[1].Value() != m.textInputs[2].Value() {
 					m.textInputs[1].SetValue("")
 					m.textInputs[2].SetValue("")
 					m.inputIndex = 1
