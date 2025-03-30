@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
 	"os"
 	"time"
 )
@@ -36,6 +37,17 @@ func init() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	baseUrlParsed, err := url.Parse(baseUrl)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	cookies := make([]*http.Cookie, 1)
+	cookies[0] = api.NewSessionCookie(
+		viper.GetString("sessionToken"),
+		time.UnixMilli(viper.GetInt64("sessionTokenExpiry")))
+	client.Jar.SetCookies(baseUrlParsed, cookies)
 }
 
 func register(username, password string) tea.Cmd {
@@ -50,7 +62,7 @@ func register(username, password string) tea.Cmd {
 			tea.Println(err)
 		}
 		body := bytes.NewBuffer(data)
-		request, err := http.NewRequest("POST", "http://0.0.0.0:30420/api/v1/account/register", body)
+		request, err := http.NewRequest("POST", registerUrl, body)
 		if err != nil {
 			tea.Println(err)
 		}
@@ -64,10 +76,19 @@ func register(username, password string) tea.Cmd {
 			err = fmt.Errorf("help")
 		}
 
-		var res api.SessionTokenResponse
-		err = json.NewDecoder(response.Body).Decode(&res)
+		var tokenResponse api.SessionTokenResponse
+		err = json.NewDecoder(response.Body).Decode(&tokenResponse)
 
-		tea.Println(res.Token)
+		for _, c := range response.Cookies() {
+			if c.Name == "session" {
+				viper.Set("sessionToken", c.Value)
+				viper.Set("sessionTokenExpiry", c.Expires.UnixMilli())
+				err = viper.WriteConfig()
+				if err != nil {
+					tea.Println(err)
+				}
+			}
+		}
 
 		return FetchCompleteMsg{
 			statusCode: response.StatusCode,
@@ -78,6 +99,9 @@ func register(username, password string) tea.Cmd {
 
 func authenticate(username, password string) tea.Cmd {
 	return func() tea.Msg {
-		return 200
+		return FetchCompleteMsg{
+			statusCode: 200,
+			err:        nil,
+		}
 	}
 }

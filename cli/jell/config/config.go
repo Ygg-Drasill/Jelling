@@ -10,7 +10,9 @@ import (
 )
 
 type JellConfig struct {
-	Theme ui.JellTheme `mapstructure:"theme"`
+	Theme        ui.JellTheme `mapstructure:"theme"`
+	SessionToken string       `mapstructure:"sessionToken"`
+	BaseApiUrl   string       `mapstructure:"baseUrl"`
 }
 
 func init() {

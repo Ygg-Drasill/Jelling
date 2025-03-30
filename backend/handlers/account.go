@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"strings"
 	"time"
 )
 
 func (ctx *Context) HandleAccountRegister() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.Cookies())
 		ctx.Logger.Info("Handling Account Register")
 		var requestBody api.AccountRequest
 		var response api.SessionTokenResponse
@@ -62,7 +62,16 @@ func (ctx *Context) HandleAccountLogin() http.HandlerFunc {
 		var valid bool
 
 		//Try to authenticate with token
-		token, withToken := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+		var token string
+		var withToken bool
+		for _, cookie := range r.Cookies() {
+			if cookie.Name == "session" {
+				token = cookie.Value
+				withToken = true
+				fmt.Println(token)
+			}
+		}
+
 		if withToken {
 			passwordIncluded := len(requestBody.Password) > 0
 			username := requestBody.Username
@@ -91,7 +100,8 @@ func (ctx *Context) HandleAccountLogin() http.HandlerFunc {
 		//Authenticate without token
 		var storedHash string
 		var userId int
-		err = ctx.Db.QueryRow("SELECT hash, id FROM users WHERE name = ?", requestBody.Username).Scan(&storedHash, &userId)
+		err = ctx.Db.QueryRow("SELECT hash, id FROM users WHERE name = ?",
+			requestBody.Username).Scan(&storedHash, &userId)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			ctx.Logger.Error("Failed to authenticate user", "error", err)
@@ -134,13 +144,6 @@ func (ctx *Context) NewToken(w http.ResponseWriter, userId int) (string, error) 
 		return "", fmt.Errorf("failed to insert session token (%d rows affacted)", n)
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Path:     "/api/v1",
-		Name:     "session_token",
-		Value:    sessionToken,
-		Expires:  expiryDate,
-		HttpOnly: true,
-		Secure:   true,
-	})
+	http.SetCookie(w, api.NewSessionCookie(sessionToken, expiryDate))
 	return sessionToken, nil
 }
