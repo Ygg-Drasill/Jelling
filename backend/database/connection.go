@@ -19,7 +19,7 @@ func Setup(db *sql.DB) error {
 
 CREATE TABLE IF NOT EXISTS users (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
+	name TEXT NOT NULL UNIQUE,
 	hash TEXT NOT NULL
 );
 
