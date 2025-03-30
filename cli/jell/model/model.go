@@ -1,67 +1,91 @@
 package model
 
 import (
-	"os"
-
 	"github.com/Ygg-Drasill/Jelling/cli/jell/ui"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/term"
+	"strings"
 )
 
 type JellModel struct {
-	user            *User
-	articleResults  []Article
-	ui              ui.JellState
-	activeComponent any
+	state State
+	menu  list.Model
+	input textinput.Model
 }
 
 func InitialModel() JellModel {
-	state := ui.NewJellState()
+	s := ui.NewJellState()
 	return JellModel{
-		user:            nil,
-		activeComponent: state.SearchInput,
-		ui:              state,
+		state: menu,
+		menu:  s.Menu,
 	}
 }
 
 func (m JellModel) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(
+		tea.SetWindowTitle("Jelling"),
+		textinput.Blink,
+	)
 }
 
 func (m JellModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd = make([]tea.Cmd, 0)
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "enter" {
-			m.activeComponent = nil
-			cmds = append(cmds, m.ui.HandleEnter(m.activeComponent))
-		}
-		if m.activeComponent != nil {
-			break
-		}
-		switch msg.String() {
-		case "q", "ctrl+c":
-			cmds = append(cmds, tea.Quit)
-			break
+		switch m.state {
+		case menu:
+			switch msg.String() {
+			case "q", "ctrl+c":
+				return m, tea.Quit
+			case "enter":
+				if selectedItem, ok := m.menu.SelectedItem().(ui.MenuItem); ok {
+					switch strings.ToLower(selectedItem.Title()) {
+					case string(search):
+						m.state = search
+						m.input = ui.SearchState().State
+						return m, textinput.Blink
+					case string(github):
+						m.state = github
+						m.input = ui.GithubState().State
+						return m, textinput.Blink
+					case "Exit":
+						return m, tea.Quit
+					}
+				}
+			}
+			m.menu, cmd = m.menu.Update(msg)
+		case search:
+			switch msg.String() {
+			case "esc", "ctrl+c":
+				m.state = menu
+				return m, nil
+			case "enter":
+				ui.SearchState().HandleEnter(m.input)
+			}
+			m.input, cmd = m.input.Update(msg)
+		case github:
+			switch msg.String() {
+			case "esc", "ctrl+c":
+				m.state = menu
+				return m, nil
+			case "enter":
+				m.input = ui.GithubState().HandleGitHub(m.input)
+			}
+			m.input, cmd = m.input.Update(msg)
 		}
 	}
-
-	var searchCmd tea.Cmd
-	m.ui.SearchInput, searchCmd = m.ui.SearchInput.Update(msg)
-	cmds = append(cmds, searchCmd)
-	return m, tea.Batch(cmds...)
+	return m, cmd
 }
 
 func (m JellModel) View() string {
-	termWidth, termHeight, _ := term.GetSize(int(os.Stdout.Fd()))
-	style := lipgloss.NewStyle().
-		Height(termHeight).
-		Width(termWidth).
-		Align(lipgloss.Center)
-	if m.user == nil {
-		return style.Render(m.ui.SearchInput.View())
+	switch m.state {
+	case menu:
+		return m.menu.View()
+	case search:
+		return m.input.View()
+	case github:
+		return m.input.View()
 	}
-	return style.Render("Hello", m.user.Name)
+	return "Hello"
 }
