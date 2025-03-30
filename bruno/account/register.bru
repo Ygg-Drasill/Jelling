@@ -1,0 +1,18 @@
+meta {
+  name: register
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{protocol}}://{{address}}:{{port}}{{baseEndpoint}}/account/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "alexref",
+    "password": "1234"
+  }
+}
