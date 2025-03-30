@@ -37,6 +37,5 @@ func init() {
 	conf := JellConfig{}
 	err = viper.Unmarshal(&conf)
 
-	fmt.Println(conf.Theme)
 	ui.Theme = conf.Theme
 }

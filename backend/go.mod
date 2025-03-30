@@ -2,11 +2,13 @@ module github.com/Ygg-Drasill/Jelling/backend
 
 go 1.24.1
 
-require modernc.org/sqlite v1.36.2
+require (
+	golang.org/x/crypto v0.36.0
+	modernc.org/sqlite v1.36.2
+)
 
 require (
 	github.com/Ygg-Drasill/Jelling/common v0.0.0
-
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -19,6 +21,4 @@ require (
 	modernc.org/memory v1.8.2 // indirect
 )
 
-replace (
-	github.com/Ygg-Drasill/Jelling/common => "../common"
-)
+replace github.com/Ygg-Drasill/Jelling/common => ../common

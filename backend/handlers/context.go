@@ -11,5 +11,8 @@ type Context struct {
 }
 
 func NewContext(db *sql.DB) *Context {
-	return &Context{Db: db}
+	return &Context{
+		Db:     db,
+		Logger: slog.Default(),
+	}
 }
