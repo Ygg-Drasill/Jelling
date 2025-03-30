@@ -1,15 +1,10 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/Ygg-Drasill/Jelling/cli/jell/model/account"
-	"github.com/Ygg-Drasill/Jelling/common/api"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
-	"log"
-	"net/http"
 	"os"
 )
 
@@ -31,8 +26,6 @@ var (
 		Short: "register an account on Jelling",
 		Run:   register,
 	}
-
-	client = http.DefaultClient
 )
 
 func init() {
@@ -58,27 +51,4 @@ func register(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
-	account := &api.AccountRequest{
-		Username: "alexref",
-		Password: "1234",
-	}
-
-	data, err := json.Marshal(account)
-	if err != nil {
-		log.Fatal(err)
-	}
-	body := bytes.NewBuffer(data)
-	request, err := http.NewRequest("POST", "http://0.0.0.0:30420/api/v1/account/register", body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	request.Header.Set("Content-Type", "application/json")
-	defer request.Body.Close()
-	response, err := client.Do(request)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(response.Status)
-
 }

@@ -1,6 +1,9 @@
 package account
 
 import (
+	"fmt"
+	"github.com/Ygg-Drasill/Jelling/cli/jell/ui"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -12,7 +15,9 @@ type JellAccountModel struct {
 	textInputs   []textinput.Model
 	inputIndex   int
 	loading      bool
+	spinner      spinner.Model
 	errorMessage string
+	done         bool
 }
 
 type ScreenMode int
@@ -49,6 +54,10 @@ func InitAccountModel(mode ScreenMode) JellAccountModel {
 	textInputs[0] = username
 	textInputs[1] = password
 
+	spinnerModel := spinner.New()
+	spinnerModel.Spinner = spinner.Dot
+	spinnerModel.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(ui.Theme.Primary))
+
 	if mode == ModeRegister {
 		passwordConfirm := textinput.New()
 		passwordConfirm.Placeholder = "Confirm Password"
@@ -65,11 +74,12 @@ func InitAccountModel(mode ScreenMode) JellAccountModel {
 		screenMode: mode,
 		textInputs: textInputs,
 		inputIndex: 0,
+		spinner:    spinnerModel,
 	}
 }
 
 func (m JellAccountModel) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, m.spinner.Tick)
 }
 
 func (m JellAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -88,26 +98,27 @@ func (m JellAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.errorMessage = "Passwords don't match"
 				} else {
 					m.loading = true
+					updateCommands = append(updateCommands, register(m.textInputs[0].Value(), m.textInputs[1].Value()))
 					return m, tea.Batch(updateCommands...)
 				}
 			} else {
 				m.inputIndex++
 			}
 
-			commands := make([]tea.Cmd, len(m.textInputs))
-			for i := range m.textInputs {
-				if i == m.inputIndex {
-					commands[i] = m.textInputs[i].Focus()
-					m.textInputs[i].PromptStyle = focusedStyle
-					m.textInputs[i].TextStyle = focusedStyle
-					continue
-				}
-				m.textInputs[i].Blur()
-				m.textInputs[i].PromptStyle = noStyle
-				m.textInputs[i].TextStyle = noStyle
-			}
+			return m, tea.Batch(m.updateInputs(nil)...)
+		}
 
-			return m, tea.Batch(commands...)
+	case FetchCompleteMsg:
+		m.loading = false
+		if msg.err != nil {
+			m.errorMessage = msg.err.Error()
+			m.inputIndex = 0
+			m.updateInputs(func(input *textinput.Model) {
+				input.SetValue("")
+			})
+		} else {
+			m.done = true
+			return m, tea.Quit
 		}
 	}
 
@@ -123,17 +134,24 @@ func (m JellAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updateCommands = append(updateCommands, inputCommand)
 	}
 
+	var spinnerCommand tea.Cmd
+	m.spinner, spinnerCommand = m.spinner.Update(msg)
+	updateCommands = append(updateCommands, spinnerCommand)
+
 	return m, tea.Batch(updateCommands...)
 }
 
 func (m JellAccountModel) View() string {
+	if m.done {
+		return ""
+	}
 	if m.loading {
-		return focusedStyle.Render("loading...")
+		return fmt.Sprintf("%s Loading...", m.spinner.View())
 	}
 
 	var builder strings.Builder
 
-	if m.errorMessage != "" {
+	if len(m.errorMessage) > 0 {
 		builder.WriteString(errorStyle.Render(m.errorMessage))
 		builder.WriteRune('\n')
 	}

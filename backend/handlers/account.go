@@ -11,16 +11,11 @@ import (
 	"time"
 )
 
-type SessionTokenResponse struct {
-	UserId   int    `json:"userId"`
-	Username string `json:"username"`
-	Token    string `json:"token"`
-}
-
 func (ctx *Context) HandleAccountRegister() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx.Logger.Info("Handling Account Register")
 		var requestBody api.AccountRequest
-		var response SessionTokenResponse
+		var response api.SessionTokenResponse
 
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 
@@ -110,7 +105,7 @@ func (ctx *Context) HandleAccountLogin() http.HandlerFunc {
 			return
 		}
 
-		var response SessionTokenResponse
+		var response api.SessionTokenResponse
 		response.Token, err = ctx.NewToken(w, userId)
 		response.UserId = userId
 		response.Username = requestBody.Username
@@ -125,9 +120,10 @@ func (ctx *Context) HandleAccountLogin() http.HandlerFunc {
 
 func (ctx *Context) NewToken(w http.ResponseWriter, userId int) (string, error) {
 	sessionToken := uuid.New().String()
+	expiryDate := time.Now().Add(time.Hour * 24 * 7)
 	res, err := ctx.Db.Exec(
 		"INSERT INTO user_sessions (user_id, token, expiry_date) VALUES (?, ?, ?)",
-		userId, sessionToken, time.Now().Add(time.Hour*24*7).UnixMilli())
+		userId, sessionToken, expiryDate.UnixMilli())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return "", err
@@ -138,5 +134,13 @@ func (ctx *Context) NewToken(w http.ResponseWriter, userId int) (string, error) 
 		return "", fmt.Errorf("failed to insert session token (%d rows affacted)", n)
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Path:     "/api/v1",
+		Name:     "session_token",
+		Value:    sessionToken,
+		Expires:  expiryDate,
+		HttpOnly: true,
+		Secure:   true,
+	})
 	return sessionToken, nil
 }
