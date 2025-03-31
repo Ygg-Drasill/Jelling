@@ -90,22 +90,8 @@ func (m JellAccountModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "enter":
-			if m.inputIndex == len(m.textInputs)-1 {
-				if m.screenMode == ModeRegister && m.textInputs[1].Value() != m.textInputs[2].Value() {
-					m.textInputs[1].SetValue("")
-					m.textInputs[2].SetValue("")
-					m.inputIndex = 1
-					m.errorMessage = "Passwords don't match"
-				} else {
-					m.loading = true
-					updateCommands = append(updateCommands, register(m.textInputs[0].Value(), m.textInputs[1].Value()))
-					return m, tea.Batch(updateCommands...)
-				}
-			} else {
-				m.inputIndex++
-			}
-
-			return m, tea.Batch(m.updateInputs(nil)...)
+			updateCommands = append(updateCommands, m.submit())
+			updateCommands = append(updateCommands, m.updateInputs(nil)...)
 		}
 
 	case FetchCompleteMsg:
