@@ -47,7 +47,6 @@ func InitAccountModel(mode ScreenMode) JellAccountModel {
 	username.Cursor.Style = focusedStyle
 
 	password.EchoMode = textinput.EchoPassword
-	password.EchoCharacter = 'ᛜ'
 	password.Cursor.Style = focusedStyle
 
 	textInputs := make([]textinput.Model, 2)
@@ -62,7 +61,6 @@ func InitAccountModel(mode ScreenMode) JellAccountModel {
 		passwordConfirm := textinput.New()
 		passwordConfirm.Placeholder = "Confirm Password"
 		passwordConfirm.EchoMode = textinput.EchoPassword
-		passwordConfirm.EchoCharacter = 'ᛜ'
 		textInputs = append(textInputs, passwordConfirm)
 	}
 
