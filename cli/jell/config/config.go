@@ -15,6 +15,12 @@ type JellConfig struct {
 	BaseApiUrl   string       `mapstructure:"baseUrl"`
 }
 
+var DefaultConfig = JellConfig{
+	Theme:        ui.Theme,
+	SessionToken: "",
+	BaseApiUrl:   "http://localhost:30420/api/v1",
+}
+
 func init() {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
@@ -23,6 +29,7 @@ func init() {
 	configPath := path.Join(jellingDirectory, "config.yaml")
 	cobra.CheckErr(err)
 
+	viper.SetDefault("baseUrl", DefaultConfig.BaseApiUrl)
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		cobra.CheckErr(os.MkdirAll(jellingDirectory, os.ModePerm))
 		viper.Set("theme", ui.Theme)

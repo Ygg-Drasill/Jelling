@@ -28,6 +28,9 @@ var (
 func init() {
 	var err error
 	baseUrl := viper.GetString("baseUrl")
+	if baseUrl == "" {
+		panic("no base url found")
+	}
 	registerUrl = baseUrl + "/account/register"
 	authenticateUrl = baseUrl + "/account/auth"
 
@@ -60,17 +63,20 @@ func register(username, password string) tea.Cmd {
 		data, err := json.Marshal(account)
 		if err != nil {
 			tea.Println(err)
+			return FetchCompleteMsg{err: err}
 		}
 		body := bytes.NewBuffer(data)
 		request, err := http.NewRequest("POST", registerUrl, body)
 		if err != nil {
 			tea.Println(err)
+			return FetchCompleteMsg{err: err}
 		}
 		request.Header.Set("Content-Type", "application/json")
 		defer request.Body.Close()
 		response, err := client.Do(request)
 		if err != nil {
 			tea.Println(err)
+			return FetchCompleteMsg{err: err}
 		}
 		if response.StatusCode >= 400 {
 			err = fmt.Errorf("help")
@@ -79,16 +85,7 @@ func register(username, password string) tea.Cmd {
 		var tokenResponse api.SessionTokenResponse
 		err = json.NewDecoder(response.Body).Decode(&tokenResponse)
 
-		for _, c := range response.Cookies() {
-			if c.Name == "session" {
-				viper.Set("sessionToken", c.Value)
-				viper.Set("sessionTokenExpiry", c.Expires.UnixMilli())
-				err = viper.WriteConfig()
-				if err != nil {
-					tea.Println(err)
-				}
-			}
-		}
+		err = saveSession(response.Cookies())
 
 		return FetchCompleteMsg{
 			statusCode: response.StatusCode,
@@ -99,9 +96,37 @@ func register(username, password string) tea.Cmd {
 
 func authenticate(username, password string) tea.Cmd {
 	return func() tea.Msg {
+		account := api.AccountRequest{
+			Username: username,
+			Password: password,
+		}
+
+		requestBody, err := json.Marshal(account)
+		requestBodyReader := bytes.NewBuffer(requestBody)
+		request, err := http.NewRequest("POST", authenticateUrl, requestBodyReader)
+		response, err := client.Do(request)
+		if response.StatusCode < 400 {
+			err = saveSession(response.Cookies())
+		}
+
 		return FetchCompleteMsg{
-			statusCode: 200,
-			err:        nil,
+			statusCode: response.StatusCode,
+			err:        err,
 		}
 	}
+}
+
+func saveSession(cookies []*http.Cookie) error {
+	for _, c := range cookies {
+		if c.Name == "session" {
+			viper.Set("sessionToken", c.Value)
+			viper.Set("sessionTokenExpiry", c.Expires.UnixMilli())
+			err := viper.WriteConfig()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
