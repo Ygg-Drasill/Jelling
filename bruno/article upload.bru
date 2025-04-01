@@ -1,0 +1,24 @@
+meta {
+  name: article upload
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{protocol}}://{{address}}:{{port}}{{baseEndpoint}}/article/upload
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  data: @file(C:\Users\sande\Github\Jelling\README.md)
+  title: Some Title
+}
+
+body:file {
+  file: @file()
+}
+
+docs {
+  Endpoint for uploading article
+}

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/Ygg-Drasill/Jelling/backend/database"
-	"github.com/Ygg-Drasill/Jelling/backend/handlers"
 	"log"
 	"net/http"
+
+	"github.com/Ygg-Drasill/Jelling/backend/database"
+	"github.com/Ygg-Drasill/Jelling/backend/handlers"
 )
 
 func main() {

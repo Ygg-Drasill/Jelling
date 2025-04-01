@@ -13,8 +13,8 @@ type JellingHealth struct {
 	DbConnectionsIdle   int           `json:"dbConnectionsIdle"`
 }
 
-func (ctx *Context) HandleHealth() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (ctx *Context) HandleHealth() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		stats := ctx.Db.Stats()
 
 		response := JellingHealth{
@@ -31,5 +31,5 @@ func (ctx *Context) HandleHealth() http.Handler {
 		}
 
 		ctx.Write(w, responseJson, http.StatusOK)
-	})
+	}
 }

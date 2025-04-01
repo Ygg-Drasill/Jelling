@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS article_topics (
 
 CREATE TABLE IF NOT EXISTS articles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    author_id INTEGER,
-    last_updated INTEGER,
+    author_id INTEGER NOT NULL,
+    last_updated INTEGER DEFAULT (unixepoch()),
     title TEXT NOT NULL,
     summary TEXT,
     source TEXT,
@@ -61,6 +61,13 @@ CREATE TABLE IF NOT EXISTS comments (
     author_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     resolved INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS article_blobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    article_id INTEGER NOT NULL,
+    data BLOB NOT NULL,
+    foreign key (article_id) REFERENCES articles(id)
 )
 
 `)
