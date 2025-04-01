@@ -72,7 +72,6 @@ func register(username, password string) tea.Cmd {
 			return FetchCompleteMsg{err: err}
 		}
 		request.Header.Set("Content-Type", "application/json")
-		defer request.Body.Close()
 		response, err := client.Do(request)
 		if err != nil {
 			tea.Println(err)
