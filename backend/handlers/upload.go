@@ -13,6 +13,8 @@ func (ctx *Context) HandleRunestoneUpload() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authorId := r.Context().Value("userId").(int)
 		articleType := contentType.PLAIN
+		var articleTitle string
+		var articleSummary string
 
 		if !strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 			ctx.Logger.Debug("Bad request received, expected multipart/form-data")
@@ -29,51 +31,77 @@ func (ctx *Context) HandleRunestoneUpload() http.HandlerFunc {
 
 		var formPart *multipart.Part
 		totalRowsAffected := int64(0)
+		var articleReader io.Reader
 		for formPart, err = partReader.NextPart(); err != io.EOF; formPart, err = partReader.NextPart() {
-			formPartBytes, err := io.ReadAll(formPart)
-			var articleId int
-			err = ctx.Db.QueryRow(`INSERT INTO articles (author_id, title, summary, content_type)
-VALUES (?,?,?,?) RETURNING id`, authorId, "", "", articleType).Scan(&articleId)
+			formPartField := formPart.FormName()
+			switch formPartField {
+			case "data":
+				articleReader = formPart
+				break
+			case "title":
+				value, err := io.ReadAll(formPart)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					ctx.Logger.Error("Failed to read article title", "error", err)
+					break
+				}
+				articleTitle = string(value)
+				break
+			case "summary":
+				value, err := io.ReadAll(formPart)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					ctx.Logger.Error("Failed to read article summary", "error", err)
+					break
+				}
+				articleSummary = string(value)
+				break
+			}
+		}
+		articleBytes, err := io.ReadAll(articleReader)
 
-			if err != nil {
-				ctx.Logger.Debug("Failed to insert into articles", "error", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			res, err := ctx.Db.Exec(
-				"INSERT INTO article_blobs (article_id, data) VALUES (?, ?)",
-				articleId, formPartBytes)
-			if err != nil {
-				ctx.Logger.Error("Failed to insert blob", "error", err.Error())
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+		var articleId int
+		err = ctx.Db.QueryRow(`INSERT INTO articles (author_id, title, summary, content_type)
+						VALUES (?,?,?,?) RETURNING id`, authorId, articleTitle, articleSummary, articleType).Scan(&articleId)
 
-			blobId, err := res.LastInsertId()
-			if err != nil {
-				ctx.Logger.Error("Failed to get last blob id", "error", err.Error())
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+		if err != nil {
+			ctx.Logger.Debug("Failed to insert into articles", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		res, err := ctx.Db.Exec(
+			"INSERT INTO article_blobs (article_id, data) VALUES (?, ?)",
+			articleId, articleBytes)
+		if err != nil {
+			ctx.Logger.Error("Failed to insert blob", "error", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-			rows, err := res.RowsAffected()
-			if err != nil {
-				ctx.Logger.Error("Failed to get rows affected", "error", err.Error())
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+		blobId, err := res.LastInsertId()
+		if err != nil {
+			ctx.Logger.Error("Failed to get last blob id", "error", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-			if rows == 0 {
-				ctx.Logger.Info("No rows affected on blob upload", "rows", rows)
-				w.WriteHeader(http.StatusNoContent)
-				return
-			}
-			totalRowsAffected += rows
-			ctx.Logger.Debug("Uploaded blob", "blobId", blobId)
-			err = formPart.Close()
-			if err != nil {
-				ctx.Logger.Error(err.Error())
-			}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			ctx.Logger.Error("Failed to get rows affected", "error", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if rows == 0 {
+			ctx.Logger.Info("No rows affected on blob upload", "rows", rows)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		totalRowsAffected += rows
+		ctx.Logger.Debug("Uploaded blob", "blobId", blobId)
+		err = formPart.Close()
+		if err != nil {
+			ctx.Logger.Error(err.Error())
 		}
 
 		response := fmt.Sprintf("{\"blobs\": %d}", totalRowsAffected)
