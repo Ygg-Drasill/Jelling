@@ -1,9 +1,9 @@
 package model
 
-type State string
+type State int
 
 const (
-	menu   State = "menu"
-	search State = "search"
-	github State = "github"
+	menu State = iota
+	search
+	github
 )
