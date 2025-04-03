@@ -43,7 +43,7 @@ func (s *Server) FetchFile(ctx context.Context, req *pb.FileRequest) (*pb.FileRe
 	if err != nil {
 		return nil, err
 	}
-
+	log.Printf("request received: %s", url)
 	return &pb.FileResponse{Content: body}, nil
 }
 

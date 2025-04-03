@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -36,38 +36,38 @@ var (
 	address = ":50051"
 )
 
-func main() {
+func FetchFromGitHub(v []string) []byte {
 	conn, err := grpc.NewClient(
 		fmt.Sprintf("%s%s", network, address),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Could not connect: %v", err)
+		log.Printf("Could not connect: %v", err)
 	}
 	defer func(conn *grpc.ClientConn) {
 		err = conn.Close()
 		if err != nil {
-			log.Fatalf("Could not close: %v", err)
+			log.Printf("Could not close: %v", err)
 		}
 	}(conn)
 
 	client := pb.NewFileClient(conn)
 
-	req := &pb.FileRequest{Owner: "Ygg-Drasill", Repo: "Jelling", Path: "README.md"}
+	req := &pb.FileRequest{Owner: v[0], Repo: v[1], Path: v[2]}
 	resp, err := client.FetchFile(context.Background(), req)
 	if err != nil {
-		log.Fatalf("Could not fetch file: %v", err)
+		log.Printf("Could not fetch file: %v", err)
 	}
 
 	j := T{}
 	err = json.Unmarshal(resp.Content, &j)
 	if err != nil {
-		log.Fatalf("Could not unmarshal: %v", err)
+		log.Printf("Could not unmarshal: %v", err)
 	}
 	j.Content = strings.ReplaceAll(j.Content, "\n", "")
 
 	d, err := base64.StdEncoding.DecodeString(j.Content)
 	if err != nil {
-		log.Fatalf("Could not decode: %v", err)
+		log.Printf("Could not decode: %v", err)
 	}
-	fmt.Printf("%s\n", d)
+	return d
 }
