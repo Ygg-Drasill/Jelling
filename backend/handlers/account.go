@@ -139,7 +139,7 @@ func (ctx *Context) NewToken(w http.ResponseWriter, userId int) (string, error) 
 	n, err := res.RowsAffected()
 	if err != nil || n == 0 {
 		w.WriteHeader(http.StatusInternalServerError)
-		return "", fmt.Errorf("failed to insert session token (%d rows affacted)", n)
+		return "", fmt.Errorf("failed to insert session token (%d rows affected)", n)
 	}
 
 	http.SetCookie(w, api.NewSessionCookie(sessionToken, expiryDate))
