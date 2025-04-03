@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/Ygg-Drasill/Jelling/cli/jell/model"
@@ -15,7 +16,10 @@ var rootCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			tea.NewProgram(model.InitialModel(), tea.WithAltScreen()).Run()
+			if _, err := tea.NewProgram(model.InitialModel(), tea.WithAltScreen()).Run(); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 	},
 }

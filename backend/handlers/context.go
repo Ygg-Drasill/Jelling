@@ -1,11 +1,18 @@
 package handlers
 
-import "database/sql"
+import (
+	"database/sql"
+	"log/slog"
+)
 
 type Context struct {
-	Db *sql.DB
+	Db     *sql.DB
+	Logger *slog.Logger
 }
 
 func NewContext(db *sql.DB) *Context {
-	return &Context{Db: db}
+	return &Context{
+		Db:     db,
+		Logger: slog.Default(),
+	}
 }

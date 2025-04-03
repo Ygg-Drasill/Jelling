@@ -12,7 +12,18 @@ post {
 
 body:json {
   {
-    "username": "alexref",
-    "password": "1234"
+    "username": "{{username}}",
+    "password": "{{password}}"
+  }
+}
+
+vars:pre-request {
+  username: 
+  password: 
+}
+
+script:post-response {
+  if (res.status < 400 && res.body.token != undefined && res.body.token != null) {
+    bru.setEnvVar("sessionToken", res.body.token)
   }
 }

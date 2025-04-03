@@ -26,12 +26,10 @@ func (ctx *Context) HandleHealth() http.Handler {
 
 		responseJson, err := json.Marshal(response)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			ctx.Write(w, []byte(err.Error()), http.StatusInternalServerError)
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
-		w.Write(responseJson)
+		ctx.Write(w, responseJson, http.StatusOK)
 	})
 }
