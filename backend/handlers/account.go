@@ -66,7 +66,7 @@ func (ctx *Context) HandleAccountLogin() http.HandlerFunc {
 			if cookie.Name == "session" {
 				token = cookie.Value
 				withToken = true
-				fmt.Println(token)
+				ctx.Logger.Debug("Session token found", "token", token)
 			}
 		}
 
