@@ -1,0 +1,17 @@
+meta {
+  name: search
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{protocol}}://{{address}}:{{port}}{{baseEndpoint}}/article/search?sortBy&title=Some title&topics
+  body: none
+  auth: none
+}
+
+params:query {
+  sortBy: 
+  title: Some title
+  topics: 
+}

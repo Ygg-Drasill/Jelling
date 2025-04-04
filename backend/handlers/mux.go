@@ -11,6 +11,7 @@ func NewJellingMux(ctx *Context) *http.ServeMux {
 	mux.Handle("POST /api/v1/account/auth", ctx.HandleAccountLogin())
 
 	mux.Handle("POST /api/v1/article/upload", ctx.WithAuthentication(ctx.HandleRunestoneUpload()))
+	mux.Handle("GET /api/v1/article/search", ctx.HandleArticleSearch())
 
 	return mux
 }

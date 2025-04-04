@@ -15,6 +15,7 @@ func (ctx *Context) HandleRunestoneUpload() http.HandlerFunc {
 		articleType := contentType.PLAIN
 		var articleTitle string
 		var articleSummary string
+		var articleData []byte
 
 		if !strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 			ctx.Logger.Debug("Bad request received, expected multipart/form-data")
@@ -31,12 +32,11 @@ func (ctx *Context) HandleRunestoneUpload() http.HandlerFunc {
 
 		var formPart *multipart.Part
 		totalRowsAffected := int64(0)
-		var articleReader io.Reader
 		for formPart, err = partReader.NextPart(); err != io.EOF; formPart, err = partReader.NextPart() {
 			formPartField := formPart.FormName()
 			switch formPartField {
 			case "data":
-				articleReader = formPart
+				articleData, err = io.ReadAll(formPart)
 				break
 			case "title":
 				value, err := io.ReadAll(formPart)
@@ -57,8 +57,18 @@ func (ctx *Context) HandleRunestoneUpload() http.HandlerFunc {
 				articleSummary = string(value)
 				break
 			}
+
+			err = formPart.Close()
+			if err != nil {
+				ctx.Logger.Error(err.Error())
+			}
 		}
-		articleBytes, err := io.ReadAll(articleReader)
+
+		if len(articleData) == 0 {
+			ctx.Logger.Warn("No bytes read from article")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		var articleId int
 		err = ctx.Db.QueryRow(`INSERT INTO articles (author_id, title, summary, content_type)
@@ -71,7 +81,7 @@ func (ctx *Context) HandleRunestoneUpload() http.HandlerFunc {
 		}
 		res, err := ctx.Db.Exec(
 			"INSERT INTO article_blobs (article_id, data) VALUES (?, ?)",
-			articleId, articleBytes)
+			articleId, articleData)
 		if err != nil {
 			ctx.Logger.Error("Failed to insert blob", "error", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -99,10 +109,6 @@ func (ctx *Context) HandleRunestoneUpload() http.HandlerFunc {
 		}
 		totalRowsAffected += rows
 		ctx.Logger.Debug("Uploaded blob", "blobId", blobId)
-		err = formPart.Close()
-		if err != nil {
-			ctx.Logger.Error(err.Error())
-		}
 
 		response := fmt.Sprintf("{\"blobs\": %d}", totalRowsAffected)
 		w.Header().Set("Content-Type", "application/json")

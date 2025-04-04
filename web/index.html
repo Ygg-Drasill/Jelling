@@ -8,6 +8,11 @@
         <script src="editor.js" defer></script>
     </head>
     <body>
+        <form method="post" onsubmit="uploadFormSubmit">
+            <input type="text" name="title" placeholder="Title" required>
+            <input type="file" name="file" accept=".md" required>
+            <button type="submit">Submit</button>
+        </form>
         <textarea resize: none; id="editor-area"></textarea>
     </body>
 </html>
