@@ -4,7 +4,7 @@ function uploadFormSubmit(e) {
     const fileInput = formData.get('file');
     const fileName = fileInput.name;
     const fileSize = fileInput.size;
-
+    console.log("hello world")
     fetch('/upload', {
         method: 'POST',
         body: formData,
@@ -17,3 +17,5 @@ function uploadFormSubmit(e) {
     })
     alert(`File "${fileName}" uploaded successfully!`);
 }
+
+document.getElementById("upload-form").addEventListener("submit", uploadFormSubmit)
